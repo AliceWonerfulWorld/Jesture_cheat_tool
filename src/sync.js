@@ -51,7 +51,7 @@ export function applyRemoteState(payload) {
   if (payload?.type !== 'STATE_UPDATE') return;
   state.currentScreen = payload.currentScreen === 'DETAIL' ? 'DETAIL' : 'HOME';
   state.activeCategory = getCategoryById(payload.activeCategoryId);
-  state.selectedItems = new Set(payload.selectedItems ?? []);
+  state.selectedItemId = payload.selectedItemId ?? null;
   renderRemoteState();
 }
 

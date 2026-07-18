@@ -4,7 +4,7 @@ export const state = {
   currentScreen: 'HOME',
   activeCategory: null,
   categories: [],
-  selectedItems: new Set(),
+  selectedItemId: null,
   syncRole: 'solo',
   roomId: null,
   peer: null,
@@ -22,6 +22,7 @@ export const state = {
     }
   ],
   lastGlobalGestureTime: 0,
+  lastGestureStatusTime: 0,
   audioContext: null,
   cameraStarted: false,
   mediaPipeStarted: false,
@@ -46,6 +47,6 @@ export function serializeState() {
     type: 'STATE_UPDATE',
     currentScreen: state.currentScreen,
     activeCategoryId: state.activeCategory?.id ?? null,
-    selectedItems: Array.from(state.selectedItems)
+    selectedItemId: state.selectedItemId
   };
 }

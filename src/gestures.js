@@ -29,7 +29,7 @@ export async function initGestures({ onLandmarks }) {
     const landmarks = results.multiHandLandmarks?.[0] ?? null;
     onLandmarks(landmarks, { isFist: landmarks ? isFist(landmarks) : false });
     detectGlobalGesture(results.multiHandLandmarks);
-    refs.cameraStatus.textContent = landmarks ? 'Hand detected' : 'Show your hand';
+    updateCameraStatus(results.multiHandLandmarks);
   });
 
   camera = new window.Camera(refs.camera, {
@@ -69,15 +69,40 @@ function isFist(landmarks) {
 }
 
 function detectGlobalGesture(hands) {
+  if (state.currentScreen !== 'DETAIL') return;
   if (!hands || hands.length < 2) return;
-  const a = hands[0][9];
-  const b = hands[1][9];
-  const distance = Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+  const distance = getHandsCloseDistance(hands[0], hands[1]);
   const now = performance.now();
 
-  if (distance < 0.08 && now - state.lastGlobalGestureTime > 1400) {
+  if (distance < 0.22 && now - state.lastGlobalGestureTime > 1400) {
     state.lastGlobalGestureTime = now;
+    state.lastGestureStatusTime = now;
+    refs.cameraStatus.textContent = '戻るモーション';
     document.querySelector('[data-action="back"]')?.click();
+  }
+}
+
+function getHandsCloseDistance(a, b) {
+  const palmDistance = getPointDistance(a[9], b[9]);
+  const wristDistance = getPointDistance(a[0], b[0]);
+  const indexTipDistance = getPointDistance(a[8], b[8]);
+  return Math.min(palmDistance, wristDistance, indexTipDistance);
+}
+
+function getPointDistance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function updateCameraStatus(hands) {
+  const now = performance.now();
+  if (now - state.lastGestureStatusTime < 900) return;
+
+  if (!hands?.length) {
+    refs.cameraStatus.textContent = '手を映してください';
+  } else if (hands.length >= 2 && state.currentScreen === 'DETAIL') {
+    refs.cameraStatus.textContent = '両手を近づけると戻る';
+  } else {
+    refs.cameraStatus.textContent = '手を検出中';
   }
 }
 

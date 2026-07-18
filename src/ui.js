@@ -12,7 +12,7 @@ export function initUi(options) {
 export function renderHome() {
   state.currentScreen = 'HOME';
   state.activeCategory = null;
-  state.selectedItems.clear();
+  state.selectedItemId = null;
 
   const fragment = refs.homeTemplate.content.cloneNode(true);
   const grid = fragment.querySelector('#category-grid');
@@ -52,7 +52,7 @@ export function renderDetail() {
   const selectionStrip = fragment.querySelector('#selection-strip');
   fragment.querySelector('#category-kicker').textContent = `${state.activeCategory.items.length} 個のお題`;
   fragment.querySelector('#category-title').textContent = state.activeCategory.title;
-  fragment.querySelector('#selected-count').textContent = String(state.selectedItems.size);
+  fragment.querySelector('#selected-count').textContent = state.selectedItemId ? '1' : '0';
 
   state.activeCategory.items.forEach((item, index) => {
     const itemId = `${state.activeCategory.id}-${index}`;
@@ -62,7 +62,7 @@ export function renderDetail() {
     card.dataset.id = itemId;
     card.style.setProperty('--accent', state.activeCategory.accent);
     card.textContent = item;
-    if (state.selectedItems.has(itemId)) card.classList.add('selected');
+    if (state.selectedItemId === itemId) card.classList.add('selected');
     grid.append(card);
   });
 
@@ -84,7 +84,7 @@ export function transitionTo(action, details = {}) {
     if (!category) return;
     state.currentScreen = 'DETAIL';
     state.activeCategory = category;
-    state.selectedItems.clear();
+    state.selectedItemId = null;
     playSound('select');
     renderDetail();
     return;
@@ -92,13 +92,8 @@ export function transitionTo(action, details = {}) {
 
   if (action === 'TOGGLE_ITEM') {
     if (!details.itemId) return;
-    if (state.selectedItems.has(details.itemId)) {
-      state.selectedItems.delete(details.itemId);
-      playSound('reset');
-    } else {
-      state.selectedItems.add(details.itemId);
-      playSound('select');
-    }
+    state.selectedItemId = details.itemId;
+    playSound('select');
     renderDetail();
     return;
   }
@@ -110,7 +105,7 @@ export function transitionTo(action, details = {}) {
   }
 
   if (action === 'RESET') {
-    state.selectedItems.clear();
+    state.selectedItemId = null;
     playSound('reset');
     if (state.currentScreen === 'DETAIL') renderDetail();
     else renderHome();
@@ -127,19 +122,26 @@ function replaceStage(fragment) {
 }
 
 function renderSelectionStrip(selectionStrip) {
-  const selectedLabels = state.activeCategory.items
-    .map((item, index) => ({ item, id: `${state.activeCategory.id}-${index}` }))
-    .filter(({ id }) => state.selectedItems.has(id))
-    .map(({ item }) => item);
-
-  selectionStrip.hidden = selectedLabels.length === 0;
   selectionStrip.replaceChildren();
 
-  selectedLabels.forEach((label) => {
-    const chip = document.createElement('span');
-    chip.textContent = label;
-    selectionStrip.append(chip);
+  if (!state.selectedItemId) {
+    selectionStrip.hidden = false;
+    selectionStrip.className = 'motion-guide';
+    selectionStrip.textContent = 'お題を1つ選んでください。次のお題へ進むときは、両手を近づけるモーションでカテゴリー選択に戻ります。';
+    return;
+  }
+
+  const selectedLabel = state.activeCategory.items.find((item, index) => {
+    return state.selectedItemId === `${state.activeCategory.id}-${index}`;
   });
+
+  selectionStrip.hidden = false;
+  selectionStrip.className = 'selected-topic';
+  selectionStrip.innerHTML = `
+    <span class="topic-label">今回のお題</span>
+    <strong>${selectedLabel}</strong>
+    <span class="motion-label">回答後: 両手を近づけて戻る</span>
+  `;
 }
 
 function notify() {
