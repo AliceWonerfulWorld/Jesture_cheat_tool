@@ -17,6 +17,7 @@ window.addEventListener('DOMContentLoaded', () => {
     roomPanel: document.querySelector('#room-panel'),
     roomId: document.querySelector('#room-id'),
     viewerUrl: document.querySelector('#viewer-url'),
+    networkHint: document.querySelector('#network-hint'),
     holdRange: document.querySelector('#hold-range'),
     holdOutput: document.querySelector('#hold-output'),
     smoothRange: document.querySelector('#smooth-range'),
@@ -33,6 +34,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderHome();
   startCursorLoop();
   bindSettings();
+  startCameraByDefault();
 });
 
 document.addEventListener('click', (event) => {
@@ -45,6 +47,8 @@ document.addEventListener('click', (event) => {
     handleAction(actionButton.dataset.action);
   } else if (roleButton) {
     setSyncRole(roleButton.dataset.role);
+  } else if (state.syncRole === 'viewer') {
+    return;
   } else if (categoryCard) {
     transitionTo('DETAIL', { categoryId: categoryCard.dataset.id });
   } else if (wordCard) {
@@ -61,7 +65,7 @@ async function handleAction(action) {
   }
 
   if (action === 'camera') {
-    await initGestures({ onLandmarks: updateCursorFromLandmarks });
+    await startCamera();
     return;
   }
 
@@ -84,7 +88,25 @@ async function handleAction(action) {
     return;
   }
 
-  transitionTo(action.toUpperCase());
+  transitionTo(normalizeAction(action));
+}
+
+function normalizeAction(action) {
+  return action.toUpperCase().replaceAll('-', '_');
+}
+
+async function startCameraByDefault() {
+  if (state.syncRole === 'viewer') return;
+  await startCamera();
+}
+
+async function startCamera() {
+  await initGestures({ onLandmarks: updateCursorFromLandmarks });
+  if (state.mediaPipeStarted) {
+    const cameraButton = document.querySelector('[data-action="camera"]');
+    cameraButton?.classList.add('active');
+    if (cameraButton) cameraButton.textContent = 'カメラON';
+  }
 }
 
 function bindSettings() {

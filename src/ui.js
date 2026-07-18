@@ -13,6 +13,13 @@ export function renderHome() {
   state.currentScreen = 'HOME';
   state.activeCategory = null;
   state.selectedItemId = null;
+  state.topicPage = 0;
+
+  if (state.syncRole === 'viewer') {
+    renderViewerState();
+    notify();
+    return;
+  }
 
   const fragment = refs.homeTemplate.content.cloneNode(true);
   const grid = fragment.querySelector('#category-grid');
@@ -47,6 +54,12 @@ export function renderDetail() {
     return;
   }
 
+  if (state.syncRole === 'viewer') {
+    renderViewerState();
+    notify();
+    return;
+  }
+
   const fragment = refs.detailTemplate.content.cloneNode(true);
   const grid = fragment.querySelector('#item-grid');
   const selectionStrip = fragment.querySelector('#selection-strip');
@@ -54,7 +67,14 @@ export function renderDetail() {
   fragment.querySelector('#category-title').textContent = state.activeCategory.title;
   fragment.querySelector('#selected-count').textContent = state.selectedItemId ? '1' : '0';
 
-  state.activeCategory.items.forEach((item, index) => {
+  const pageCount = getPageCount();
+  const currentPage = Math.min(state.topicPage, pageCount - 1);
+  const startIndex = currentPage * state.topicsPerPage;
+  const pageItems = state.activeCategory.items.slice(startIndex, startIndex + state.topicsPerPage);
+
+  state.topicPage = currentPage;
+  pageItems.forEach((item, pageIndex) => {
+    const index = startIndex + pageIndex;
     const itemId = `${state.activeCategory.id}-${index}`;
     const card = document.createElement('button');
     card.type = 'button';
@@ -67,6 +87,7 @@ export function renderDetail() {
   });
 
   renderSelectionStrip(selectionStrip);
+  renderPagination(grid, currentPage, pageCount);
 
   replaceStage(fragment);
   notify();
@@ -85,6 +106,7 @@ export function transitionTo(action, details = {}) {
     state.currentScreen = 'DETAIL';
     state.activeCategory = category;
     state.selectedItemId = null;
+    state.topicPage = 0;
     playSound('select');
     renderDetail();
     return;
@@ -93,6 +115,32 @@ export function transitionTo(action, details = {}) {
   if (action === 'TOGGLE_ITEM') {
     if (!details.itemId) return;
     state.selectedItemId = details.itemId;
+    playSound('select');
+    renderDetail();
+    return;
+  }
+
+  if (action === 'NEXT_PAGE') {
+    if (state.currentScreen !== 'DETAIL') return;
+    state.topicPage = Math.min(state.topicPage + 1, getPageCount() - 1);
+    playSound('hover');
+    renderDetail();
+    return;
+  }
+
+  if (action === 'PREV_PAGE') {
+    if (state.currentScreen !== 'DETAIL') return;
+    state.topicPage = Math.max(state.topicPage - 1, 0);
+    playSound('hover');
+    renderDetail();
+    return;
+  }
+
+  if (action === 'RANDOM_TOPIC') {
+    if (state.currentScreen !== 'DETAIL' || !state.activeCategory) return;
+    const randomIndex = Math.floor(Math.random() * state.activeCategory.items.length);
+    state.topicPage = Math.floor(randomIndex / state.topicsPerPage);
+    state.selectedItemId = `${state.activeCategory.id}-${randomIndex}`;
     playSound('select');
     renderDetail();
     return;
@@ -113,6 +161,11 @@ export function transitionTo(action, details = {}) {
 }
 
 export function renderRemoteState() {
+  if (state.syncRole === 'viewer') {
+    renderViewerState();
+    return;
+  }
+
   if (state.currentScreen === 'DETAIL') renderDetail();
   else renderHome();
 }
@@ -121,26 +174,98 @@ function replaceStage(fragment) {
   refs.stage.replaceChildren(fragment);
 }
 
+function renderPagination(grid, currentPage, pageCount) {
+  const controls = document.createElement('div');
+  controls.className = 'topic-pager';
+
+  const prevButton = document.createElement('button');
+  prevButton.type = 'button';
+  prevButton.dataset.action = 'prev-page';
+  prevButton.className = 'pager-button';
+  prevButton.textContent = '← 前へ';
+  prevButton.disabled = currentPage === 0;
+
+  const randomButton = document.createElement('button');
+  randomButton.type = 'button';
+  randomButton.dataset.action = 'random-topic';
+  randomButton.className = 'pager-button random';
+  randomButton.textContent = 'ランダム';
+
+  const pageLabel = document.createElement('span');
+  pageLabel.className = 'page-label';
+  pageLabel.textContent = `${currentPage + 1} / ${pageCount}`;
+
+  const nextButton = document.createElement('button');
+  nextButton.type = 'button';
+  nextButton.dataset.action = 'next-page';
+  nextButton.className = 'pager-button';
+  nextButton.textContent = '次へ →';
+  nextButton.disabled = currentPage >= pageCount - 1;
+
+  controls.append(prevButton, randomButton, pageLabel, nextButton);
+  grid.after(controls);
+}
+
+function getPageCount() {
+  if (!state.activeCategory) return 1;
+  return Math.max(1, Math.ceil(state.activeCategory.items.length / state.topicsPerPage));
+}
+
+function renderViewerState() {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'viewer-screen';
+
+  if (state.currentScreen === 'DETAIL' && state.activeCategory && state.selectedItemId) {
+    const selectedLabel = getSelectedLabel();
+    wrapper.classList.add('has-topic');
+    wrapper.innerHTML = `
+      <p class="eyebrow">Synced Topic</p>
+      <div class="viewer-category">${state.activeCategory.title}</div>
+      <strong class="viewer-topic">${selectedLabel}</strong>
+      <p class="viewer-note">このお題をジェスチャーで伝えてください</p>
+    `;
+  } else if (state.currentScreen === 'DETAIL' && state.activeCategory) {
+    wrapper.innerHTML = `
+      <p class="eyebrow">Category Selected</p>
+      <div class="viewer-category">${state.activeCategory.title}</div>
+      <strong class="viewer-waiting">お題選択待ち</strong>
+      <p class="viewer-note">出題側がお題を選ぶと、この画面に表示されます</p>
+    `;
+  } else {
+    wrapper.innerHTML = `
+      <p class="eyebrow">Waiting</p>
+      <strong class="viewer-waiting">次のお題を待っています</strong>
+      <p class="viewer-note">出題側がジャンルとお題を選ぶと自動で切り替わります</p>
+    `;
+  }
+
+  replaceStage(wrapper);
+}
+
+function getSelectedLabel() {
+  return state.activeCategory.items.find((item, index) => {
+    return state.selectedItemId === `${state.activeCategory.id}-${index}`;
+  }) ?? '';
+}
+
 function renderSelectionStrip(selectionStrip) {
   selectionStrip.replaceChildren();
 
   if (!state.selectedItemId) {
     selectionStrip.hidden = false;
     selectionStrip.className = 'motion-guide';
-    selectionStrip.textContent = 'お題を1つ選んでください。次のお題へ進むときは、両手を近づけるモーションでカテゴリー選択に戻ります。';
+    selectionStrip.textContent = 'お題を1つ選んでください。次のお題へ進むときは、両手を開いて近づけるモーションでカテゴリー選択に戻ります。';
     return;
   }
 
-  const selectedLabel = state.activeCategory.items.find((item, index) => {
-    return state.selectedItemId === `${state.activeCategory.id}-${index}`;
-  });
+  const selectedLabel = getSelectedLabel();
 
   selectionStrip.hidden = false;
   selectionStrip.className = 'selected-topic';
   selectionStrip.innerHTML = `
     <span class="topic-label">今回のお題</span>
     <strong>${selectedLabel}</strong>
-    <span class="motion-label">回答後: 両手を近づけて戻る</span>
+    <span class="motion-label">回答後: 両手を開いて近づけて戻る</span>
   `;
 }
 

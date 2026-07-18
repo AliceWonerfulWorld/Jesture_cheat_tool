@@ -4,6 +4,7 @@ let camera = null;
 
 export async function initGestures({ onLandmarks }) {
   if (state.mediaPipeStarted) return;
+  await waitForGestureLibraries();
   if (!window.Hands || !window.Camera) {
     refs.cameraStatus.textContent = 'MediaPipe unavailable';
     return;
@@ -49,6 +50,14 @@ export async function initGestures({ onLandmarks }) {
   }
 }
 
+async function waitForGestureLibraries() {
+  const startedAt = performance.now();
+  while ((!window.Hands || !window.Camera) && performance.now() - startedAt < 8000) {
+    refs.cameraStatus.textContent = 'カメラ準備中';
+    await new Promise((resolve) => setTimeout(resolve, 120));
+  }
+}
+
 function isFist(landmarks) {
   const folded = [
     landmarks[8].y > landmarks[6].y,
@@ -70,16 +79,43 @@ function isFist(landmarks) {
 
 function detectGlobalGesture(hands) {
   if (state.currentScreen !== 'DETAIL') return;
-  if (!hands || hands.length < 2) return;
+  if (!hands || hands.length < 2) {
+    state.globalBackStartTime = null;
+    return;
+  }
+
+  const isBackPose = isOpenHand(hands[0]) && isOpenHand(hands[1]);
+  if (!isBackPose) {
+    state.globalBackStartTime = null;
+    return;
+  }
+
   const distance = getHandsCloseDistance(hands[0], hands[1]);
   const now = performance.now();
+  if (distance >= 0.22) {
+    state.globalBackStartTime = null;
+    return;
+  }
 
-  if (distance < 0.22 && now - state.lastGlobalGestureTime > 1400) {
+  if (!state.globalBackStartTime) state.globalBackStartTime = now;
+  const holdMs = now - state.globalBackStartTime;
+
+  if (holdMs > 800 && now - state.lastGlobalGestureTime > 1400) {
     state.lastGlobalGestureTime = now;
     state.lastGestureStatusTime = now;
+    state.globalBackStartTime = null;
     refs.cameraStatus.textContent = '戻るモーション';
     document.querySelector('[data-action="back"]')?.click();
   }
+}
+
+function isOpenHand(landmarks) {
+  return !isFist(landmarks) && [
+    landmarks[8].y < landmarks[6].y,
+    landmarks[12].y < landmarks[10].y,
+    landmarks[16].y < landmarks[14].y,
+    landmarks[20].y < landmarks[18].y
+  ].filter(Boolean).length >= 3;
 }
 
 function getHandsCloseDistance(a, b) {
@@ -100,7 +136,7 @@ function updateCameraStatus(hands) {
   if (!hands?.length) {
     refs.cameraStatus.textContent = '手を映してください';
   } else if (hands.length >= 2 && state.currentScreen === 'DETAIL') {
-    refs.cameraStatus.textContent = '両手を近づけると戻る';
+    refs.cameraStatus.textContent = '両手を開いて近づけると戻る';
   } else {
     refs.cameraStatus.textContent = '手を検出中';
   }

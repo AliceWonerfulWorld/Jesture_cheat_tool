@@ -5,10 +5,13 @@ export const state = {
   activeCategory: null,
   categories: [],
   selectedItemId: null,
+  topicPage: 0,
+  topicsPerPage: 12,
   syncRole: 'solo',
   roomId: null,
   peer: null,
   connections: new Set(),
+  syncRetryTimer: null,
   hands: [
     {
       cursor: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
@@ -23,6 +26,7 @@ export const state = {
   ],
   lastGlobalGestureTime: 0,
   lastGestureStatusTime: 0,
+  globalBackStartTime: null,
   audioContext: null,
   cameraStarted: false,
   mediaPipeStarted: false,
