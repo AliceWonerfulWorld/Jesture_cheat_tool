@@ -79,54 +79,45 @@ function isFist(landmarks) {
 
 function detectGlobalGesture(hands) {
   if (state.currentScreen !== 'DETAIL') return;
-  if (!hands || hands.length < 2) {
-    state.globalBackStartTime = null;
+  const landmarks = hands?.[0] ?? null;
+  if (!landmarks) {
+    state.peaceBackStartTime = null;
     return;
   }
 
-  const isBackPose = isOpenHand(hands[0]) && isOpenHand(hands[1]);
-  if (!isBackPose) {
-    state.globalBackStartTime = null;
+  if (!isPeaceSign(landmarks)) {
+    state.peaceBackStartTime = null;
     return;
   }
 
-  const distance = getHandsCloseDistance(hands[0], hands[1]);
   const now = performance.now();
-  if (distance >= 0.22) {
-    state.globalBackStartTime = null;
-    return;
-  }
+  if (!state.peaceBackStartTime) state.peaceBackStartTime = now;
+  const holdMs = now - state.peaceBackStartTime;
 
-  if (!state.globalBackStartTime) state.globalBackStartTime = now;
-  const holdMs = now - state.globalBackStartTime;
-
-  if (holdMs > 800 && now - state.lastGlobalGestureTime > 1400) {
+  if (holdMs > 650 && now - state.lastGlobalGestureTime > 1200) {
     state.lastGlobalGestureTime = now;
     state.lastGestureStatusTime = now;
-    state.globalBackStartTime = null;
-    refs.cameraStatus.textContent = '戻るモーション';
+    state.peaceBackStartTime = null;
+    refs.cameraStatus.textContent = 'チョキで戻る';
     document.querySelector('[data-action="back"]')?.click();
   }
 }
 
-function isOpenHand(landmarks) {
-  return !isFist(landmarks) && [
-    landmarks[8].y < landmarks[6].y,
-    landmarks[12].y < landmarks[10].y,
-    landmarks[16].y < landmarks[14].y,
-    landmarks[20].y < landmarks[18].y
-  ].filter(Boolean).length >= 3;
+function isPeaceSign(landmarks) {
+  const extended = {
+    index: isFingerExtended(landmarks, 8, 6),
+    middle: isFingerExtended(landmarks, 12, 10),
+    ring: isFingerExtended(landmarks, 16, 14),
+    pinky: isFingerExtended(landmarks, 20, 18)
+  };
+
+  return extended.index && extended.middle && !extended.ring && !extended.pinky;
 }
 
-function getHandsCloseDistance(a, b) {
-  const palmDistance = getPointDistance(a[9], b[9]);
-  const wristDistance = getPointDistance(a[0], b[0]);
-  const indexTipDistance = getPointDistance(a[8], b[8]);
-  return Math.min(palmDistance, wristDistance, indexTipDistance);
-}
-
-function getPointDistance(a, b) {
-  return Math.hypot(a.x - b.x, a.y - b.y);
+function isFingerExtended(landmarks, tipIndex, pipIndex) {
+  const tip = landmarks[tipIndex];
+  const pip = landmarks[pipIndex];
+  return tip.y < pip.y - 0.025;
 }
 
 function updateCameraStatus(hands) {
@@ -135,8 +126,8 @@ function updateCameraStatus(hands) {
 
   if (!hands?.length) {
     refs.cameraStatus.textContent = '手を映してください';
-  } else if (hands.length >= 2 && state.currentScreen === 'DETAIL') {
-    refs.cameraStatus.textContent = '両手を開いて近づけると戻る';
+  } else if (state.currentScreen === 'DETAIL') {
+    refs.cameraStatus.textContent = 'チョキで戻る';
   } else {
     refs.cameraStatus.textContent = '手を検出中';
   }

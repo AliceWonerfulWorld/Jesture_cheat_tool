@@ -26,7 +26,7 @@ export const state = {
   ],
   lastGlobalGestureTime: 0,
   lastGestureStatusTime: 0,
-  globalBackStartTime: null,
+  peaceBackStartTime: null,
   audioContext: null,
   cameraStarted: false,
   mediaPipeStarted: false,

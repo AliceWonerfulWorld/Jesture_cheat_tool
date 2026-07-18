@@ -136,16 +136,6 @@ export function transitionTo(action, details = {}) {
     return;
   }
 
-  if (action === 'RANDOM_TOPIC') {
-    if (state.currentScreen !== 'DETAIL' || !state.activeCategory) return;
-    const randomIndex = Math.floor(Math.random() * state.activeCategory.items.length);
-    state.topicPage = Math.floor(randomIndex / state.topicsPerPage);
-    state.selectedItemId = `${state.activeCategory.id}-${randomIndex}`;
-    playSound('select');
-    renderDetail();
-    return;
-  }
-
   if (action === 'BACK') {
     if (state.currentScreen === 'DETAIL') renderHome();
     playSound('back');
@@ -185,12 +175,6 @@ function renderPagination(grid, currentPage, pageCount) {
   prevButton.textContent = '← 前へ';
   prevButton.disabled = currentPage === 0;
 
-  const randomButton = document.createElement('button');
-  randomButton.type = 'button';
-  randomButton.dataset.action = 'random-topic';
-  randomButton.className = 'pager-button random';
-  randomButton.textContent = 'ランダム';
-
   const pageLabel = document.createElement('span');
   pageLabel.className = 'page-label';
   pageLabel.textContent = `${currentPage + 1} / ${pageCount}`;
@@ -202,7 +186,7 @@ function renderPagination(grid, currentPage, pageCount) {
   nextButton.textContent = '次へ →';
   nextButton.disabled = currentPage >= pageCount - 1;
 
-  controls.append(prevButton, randomButton, pageLabel, nextButton);
+  controls.append(prevButton, pageLabel, nextButton);
   grid.after(controls);
 }
 
@@ -254,7 +238,7 @@ function renderSelectionStrip(selectionStrip) {
   if (!state.selectedItemId) {
     selectionStrip.hidden = false;
     selectionStrip.className = 'motion-guide';
-    selectionStrip.textContent = 'お題を1つ選んでください。次のお題へ進むときは、両手を開いて近づけるモーションでカテゴリー選択に戻ります。';
+    selectionStrip.textContent = 'お題を1つ選んでください。次のお題へ進むときは、片手でチョキを作るとカテゴリー選択に戻ります。';
     return;
   }
 
@@ -265,7 +249,7 @@ function renderSelectionStrip(selectionStrip) {
   selectionStrip.innerHTML = `
     <span class="topic-label">今回のお題</span>
     <strong>${selectedLabel}</strong>
-    <span class="motion-label">回答後: 両手を開いて近づけて戻る</span>
+    <span class="motion-label">回答後: チョキで戻る</span>
   `;
 }
 
