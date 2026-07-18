@@ -1,4 +1,5 @@
 import { getCategoryById, refs, state } from './state.js';
+import { getItemReading } from './data.js';
 
 let onStateChange = () => {};
 let playSound = () => {};
@@ -73,7 +74,17 @@ export function renderDetail() {
     card.className = 'word-card';
     card.dataset.id = itemId;
     card.style.setProperty('--accent', state.activeCategory.accent);
-    card.textContent = item;
+    const mainLabel = document.createElement('span');
+    mainLabel.className = 'word-main';
+    mainLabel.textContent = item;
+    card.append(mainLabel);
+
+    if (/[一-龥々]/.test(item) || /[A-Za-z0-9]/.test(item)) {
+      const readingLabel = document.createElement('small');
+      readingLabel.className = 'word-reading';
+      readingLabel.textContent = getItemReading(item);
+      card.append(readingLabel);
+    }
     if (state.selectedItemId === itemId) card.classList.add('selected');
     grid.append(card);
   });

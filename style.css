@@ -350,7 +350,8 @@ h2 {
 }
 
 .category-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .item-grid {
@@ -415,10 +416,10 @@ h2 {
 .category-card,
 .word-card {
   position: relative;
-  min-height: 190px;
+  min-height: 136px;
   border: 2px solid transparent;
   border-radius: 8px;
-  padding: 24px;
+  padding: 18px;
   overflow: hidden;
   background: var(--panel-strong);
   box-shadow: inset 0 0 0 1px var(--line);
@@ -446,15 +447,15 @@ h2 {
 }
 
 .category-card h3 {
-  margin: 0 0 14px;
-  font-size: clamp(1.5rem, 2.4vw, 3rem);
+  margin: 0 0 8px;
+  font-size: clamp(1.2rem, 1.75vw, 2rem);
   line-height: 1;
 }
 
 .category-card p {
-  margin-bottom: 24px;
+  margin-bottom: 12px;
   color: var(--muted);
-  font-size: clamp(1rem, 1.3vw, 1.25rem);
+  font-size: clamp(0.78rem, 0.9vw, 1rem);
   line-height: 1.4;
 }
 
@@ -476,6 +477,19 @@ h2 {
   line-height: 1.05;
   font-weight: 950;
   overflow-wrap: anywhere;
+}
+
+.word-main {
+  display: block;
+}
+
+.word-reading {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.62em;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .word-card.selected {
@@ -539,7 +553,7 @@ button.hovered {
 
 .hide-camera-preview .camera,
 .hide-camera-preview .debug-canvas {
-  opacity: 0;
+  display: none;
   pointer-events: none;
 }
 
@@ -574,7 +588,7 @@ button.hovered {
   }
 
   .category-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .item-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -609,13 +623,13 @@ button.hovered {
     padding-top: 12px;
   }
 
-  .category-grid,
-  .item-grid {
-    grid-template-columns: 1fr;
+  .category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .category-card {
-    min-height: 148px;
+    min-height: 124px;
+    padding: 14px;
   }
 
   .item-grid {
