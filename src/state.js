@@ -5,8 +5,6 @@ export const state = {
   activeCategory: null,
   categories: [],
   selectedItemId: null,
-  topicPage: 0,
-  topicsPerPage: 12,
   syncRole: 'solo',
   roomId: null,
   peer: null,

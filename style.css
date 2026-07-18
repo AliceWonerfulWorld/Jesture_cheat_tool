@@ -354,7 +354,9 @@ h2 {
 }
 
 .item-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
 }
 
 .motion-guide,
@@ -467,9 +469,10 @@ h2 {
 .word-card {
   display: grid;
   place-items: center;
-  min-height: 135px;
+  min-height: clamp(64px, 8vh, 92px);
+  padding: 12px 10px;
   text-align: center;
-  font-size: clamp(1.25rem, 1.8vw, 2.35rem);
+  font-size: clamp(0.95rem, 1.2vw, 1.45rem);
   line-height: 1.05;
   font-weight: 950;
   overflow-wrap: anywhere;
@@ -478,41 +481,6 @@ h2 {
 .word-card.selected {
   background: color-mix(in srgb, var(--accent) 42%, var(--panel-strong));
   border-color: rgba(255, 255, 255, 0.42);
-}
-
-.topic-pager {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 12px;
-  align-items: center;
-  margin-top: 18px;
-}
-
-.pager-button {
-  min-height: 58px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  font-size: clamp(1rem, 1.4vw, 1.3rem);
-  font-weight: 950;
-}
-
-.pager-button:disabled {
-  cursor: default;
-  opacity: 0.35;
-}
-
-.pager-button.hovered:not(:disabled) {
-  border-color: var(--amber);
-  transform: scale(1.025);
-  box-shadow: 0 0 0 7px rgba(255, 191, 94, 0.18), var(--shadow);
-}
-
-.page-label {
-  min-width: 84px;
-  color: var(--muted);
-  text-align: center;
-  font-weight: 950;
 }
 
 .category-card.hovered,
@@ -605,18 +573,11 @@ button.hovered {
     margin-left: 0;
   }
 
-  .category-grid,
-  .item-grid {
+  .category-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .topic-pager {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .page-label {
-    grid-column: 1 / -1;
-    order: -1;
+  .item-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .selected-topic {
@@ -653,13 +614,16 @@ button.hovered {
     grid-template-columns: 1fr;
   }
 
-  .topic-pager {
-    grid-template-columns: 1fr;
+  .category-card {
+    min-height: 148px;
   }
 
-  .category-card,
+  .item-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .word-card {
-    min-height: 148px;
+    min-height: 82px;
   }
 
   .camera,

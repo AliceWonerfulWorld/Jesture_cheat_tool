@@ -13,7 +13,6 @@ export function renderHome() {
   state.currentScreen = 'HOME';
   state.activeCategory = null;
   state.selectedItemId = null;
-  state.topicPage = 0;
 
   if (state.syncRole === 'viewer') {
     renderViewerState();
@@ -67,14 +66,7 @@ export function renderDetail() {
   fragment.querySelector('#category-title').textContent = state.activeCategory.title;
   fragment.querySelector('#selected-count').textContent = state.selectedItemId ? '1' : '0';
 
-  const pageCount = getPageCount();
-  const currentPage = Math.min(state.topicPage, pageCount - 1);
-  const startIndex = currentPage * state.topicsPerPage;
-  const pageItems = state.activeCategory.items.slice(startIndex, startIndex + state.topicsPerPage);
-
-  state.topicPage = currentPage;
-  pageItems.forEach((item, pageIndex) => {
-    const index = startIndex + pageIndex;
+  state.activeCategory.items.forEach((item, index) => {
     const itemId = `${state.activeCategory.id}-${index}`;
     const card = document.createElement('button');
     card.type = 'button';
@@ -87,7 +79,6 @@ export function renderDetail() {
   });
 
   renderSelectionStrip(selectionStrip);
-  renderPagination(grid, currentPage, pageCount);
 
   replaceStage(fragment);
   notify();
@@ -106,7 +97,6 @@ export function transitionTo(action, details = {}) {
     state.currentScreen = 'DETAIL';
     state.activeCategory = category;
     state.selectedItemId = null;
-    state.topicPage = 0;
     playSound('select');
     renderDetail();
     return;
@@ -116,22 +106,6 @@ export function transitionTo(action, details = {}) {
     if (!details.itemId) return;
     state.selectedItemId = details.itemId;
     playSound('select');
-    renderDetail();
-    return;
-  }
-
-  if (action === 'NEXT_PAGE') {
-    if (state.currentScreen !== 'DETAIL') return;
-    state.topicPage = Math.min(state.topicPage + 1, getPageCount() - 1);
-    playSound('hover');
-    renderDetail();
-    return;
-  }
-
-  if (action === 'PREV_PAGE') {
-    if (state.currentScreen !== 'DETAIL') return;
-    state.topicPage = Math.max(state.topicPage - 1, 0);
-    playSound('hover');
     renderDetail();
     return;
   }
@@ -162,37 +136,6 @@ export function renderRemoteState() {
 
 function replaceStage(fragment) {
   refs.stage.replaceChildren(fragment);
-}
-
-function renderPagination(grid, currentPage, pageCount) {
-  const controls = document.createElement('div');
-  controls.className = 'topic-pager';
-
-  const prevButton = document.createElement('button');
-  prevButton.type = 'button';
-  prevButton.dataset.action = 'prev-page';
-  prevButton.className = 'pager-button';
-  prevButton.textContent = '← 前へ';
-  prevButton.disabled = currentPage === 0;
-
-  const pageLabel = document.createElement('span');
-  pageLabel.className = 'page-label';
-  pageLabel.textContent = `${currentPage + 1} / ${pageCount}`;
-
-  const nextButton = document.createElement('button');
-  nextButton.type = 'button';
-  nextButton.dataset.action = 'next-page';
-  nextButton.className = 'pager-button';
-  nextButton.textContent = '次へ →';
-  nextButton.disabled = currentPage >= pageCount - 1;
-
-  controls.append(prevButton, pageLabel, nextButton);
-  grid.after(controls);
-}
-
-function getPageCount() {
-  if (!state.activeCategory) return 1;
-  return Math.max(1, Math.ceil(state.activeCategory.items.length / state.topicsPerPage));
 }
 
 function renderViewerState() {
@@ -238,7 +181,7 @@ function renderSelectionStrip(selectionStrip) {
   if (!state.selectedItemId) {
     selectionStrip.hidden = false;
     selectionStrip.className = 'motion-guide';
-    selectionStrip.textContent = 'お題を1つ選んでください。次のお題へ進むときは、片手でチョキを作るとカテゴリー選択に戻ります。';
+    selectionStrip.textContent = '手カーソルをお題に合わせ、グーを保持して確定してください。片手チョキでカテゴリー選択に戻ります。';
     return;
   }
 
@@ -249,7 +192,7 @@ function renderSelectionStrip(selectionStrip) {
   selectionStrip.innerHTML = `
     <span class="topic-label">今回のお題</span>
     <strong>${selectedLabel}</strong>
-    <span class="motion-label">回答後: チョキで戻る</span>
+    <span class="motion-label">回答後: 片手チョキで戻る</span>
   `;
 }
 
